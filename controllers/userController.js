@@ -40,32 +40,86 @@ function saveUser(req, res){
 }
 
 function getUsers(req, res){
-    if(req.params.page){
-      var page = req.params.page;
-    }else{
-      var page = 1;
-    }
-  
-    var itemsPerPage = 5;
-    User.find().sort('name').paginate(page, itemsPerPage,(err,artists,total)=>{
+    User.find((err,users)=>{
         if(err){
-            res.status(500).send({message: 'Error al conseguir el artista'});
+            res.status(500).send({message: 'Ocurrio un problema con la base de datos...'});
         }else{
-          if(!artists){
-            res.status(404).send({message: 'No se encuentra los artistas'});
-          }else{
-            return res.status(200).send({
-              message: 'ok',
-              total: total,
-              artists: artists
-            });
-          }
+            if(!users){
+                res.status(404).send({message: 'No se pudo recuperar los usuarios...'});
+            }else{
+                res.status(200).send({message: 'ok', users});
+            }
         }
     });
   }
+
+  function login(req, res){
+    var params = req.body;
+
+    var email = params.email;
+    var password = params.password;
+
+    User.findOne({email: email.toLowerCase()}, (err, user) => {
+        if(err){
+            res.status(500).send({message: 'Ocurrio un problema con la base de datos'});
+        }else{
+            if(!user){
+                res.status(404).send({message: 'El usuario no existe'});
+            }else{
+                bcrypt.compare(password, user.password, (err, check)=>{
+                    if(check){
+                        if(params.gethash){
+                            res.status(200).send({message: 'Usuario logeado correctamente', token: jwt.createToken(user)});
+                        }else{
+                            res.status(200).send({message: 'Usuario logeado correctamente', user});
+                        }
+                    }else{
+                        res.status(404).send({message: 'Contraseña o email incorrectos'});
+                    }
+                });
+            }
+        }
+    });
+  };
+
+  function updateUser(req, res){
+      var userId = req.params.id;
+      var update = req.body;
+
+      User.findByIdAndUpdate(userId, update, (err, userUpdated)=> {
+        if(err){
+            res.status(500).send({message: 'Error en la base de datos...'});
+        }else{
+            if(!userUpdated){
+                res.status(404).send({message: 'No se encontro el usuario...'});
+            }else{
+                res.status(200).send({message: 'ok', userUpdated});
+            }
+        }
+      });
+  }
+
+  function deleteUser(req, res){
+      var userId = req.params.id;
+
+      User.findOneAndRemove(userId, (err, user)=>{
+          if(err){
+              res.status(500).send({message: 'Error con la base de datos...'});
+          }else{
+              if(!user){
+                  res.status(404).send({message: 'Usuario no encontrado'});
+              }else{
+                  res.status(200).send({message: 'ok', user});
+              }
+          }
+      });
+  }
+
 module.exports = {
     prueba,
     saveUser,
-    getUsers
+    getUsers,
+    login,
+    updateUser,
+    deleteUser
 };
-3312543044 // david
