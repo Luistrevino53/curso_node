@@ -10,7 +10,7 @@ var api = express.Router();
 //rutas del controlador
 api.get('/prueba', userController.prueba);
 api.get('/users/:page?', md_auth.ensureAuth, userController.getUsers);
-api.get('/cars/:id', md_auth.ensureAuth, userController.getCars);
+api.get('/:id', md_auth.ensureAuth, userController.findUser);
 
 api.post('/', userController.saveUser);
 api.post('/login', userController.login);

@@ -6,11 +6,6 @@ var Schema = mongoose.Schema;
 var CarSchema = Schema({
     name : String,
     model: String,
-    color: String,
-    user : {
-        type: Schema.ObjectId,
-        ref: 'User'
-    }
+    color: String
 });
-
 module.exports = mongoose.model('Car', CarSchema);
