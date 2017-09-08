@@ -10,7 +10,6 @@ function addCar(req, res){
     car.name  = params.name;
     car.model = params.model;
     car.color = params.color;
-    car.user = params.user;
 
     car.save((err, carStored)=>{
         if(err){
@@ -34,7 +33,7 @@ function getCars(req, res){
 
     var itemsPerPage = 5;
 
-    Car.find().populate({path: 'user'}).paginate(page, itemsPerPage, (err, cars, total)=>{
+    Car.find().paginate(page, itemsPerPage, (err, cars, total)=>{
         if(err){
             res.status(500).send({message: 'Error en la base de datos'});
         }else{

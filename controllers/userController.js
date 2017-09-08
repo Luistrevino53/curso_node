@@ -4,6 +4,7 @@ var bcrypt = require('bcrypt-nodejs');
 var User = require('../models/user');
 var jwt = require('../services/jwt');
 var Car = require('../models/car');
+var moment = require('moment');
 var mongoosePaginate = require('mongoose-pagination');
 
 function prueba(req, res) {
@@ -15,9 +16,16 @@ function prueba(req, res) {
 function saveUser(req, res) {
     var user = new User();
     var params = req.body;
-
+    console.log(params)
     user.name = params.name;
     user.email = params.email;
+
+    if(Array.isArray(params.cars)){
+        user.cars = params.cars
+    }else{
+        var cars = params.cars.split(",");
+        user.cars = cars;
+    }
 
     if (params.password) {
         bcrypt.hash(params.password, null, null, (err, hash) => {
@@ -25,6 +33,7 @@ function saveUser(req, res) {
             if (user.name != null && user.email != null) {
                 user.save((err, userStored) => {
                     if (err) {
+                        console.log(err);
                         res.status(500).send({ message: 'Error al guardar el usuario' });
                     } else {
                         if (!userStored) {
@@ -50,7 +59,7 @@ function getUsers(req, res) {
 
     var itemsPerPage = 5;
 
-    User.find().paginate(page, itemsPerPage, (err, users, total) => {
+    User.find().populate({path: 'cars'}).paginate(page, itemsPerPage, (err, users, total) => {
         if (err) {
             res.status(500).send({ message: 'Error en la base de datos' });
         } else {
@@ -99,9 +108,15 @@ function login(req, res) {
 function updateUser(req, res) {
     var userId = req.params.id;
     var update = req.body;
-
+    if(Array.isArray(req.body.cars)){
+        update.cars = req.body.cars;
+    }else{
+        var cars = req.body.cars.split(",");
+        update.cars = cars; 
+    }
     User.findByIdAndUpdate(userId, update, (err, userUpdated) => {
         if (err) {
+            console.log(err);
             res.status(500).send({ message: 'Error en la base de datos...' });
         } else {
             if (!userUpdated) {
@@ -129,29 +144,20 @@ function deleteUser(req, res) {
     });
 }
 
-function getCars(req, res) {
+function findUser(req, res){
     var id = req.params.id;
 
-    Car.find({
-        user: id
-    }, (err, list) => {
-        if (err) {
-            res.status(500).send({
-                message: 'Error en la base de datos...'
-            });
-        } else {
-            if (!list) {
-                res.status(404).send({
-                    message: "No se encontraron canciones del album"
-                });
-            } else {
-                res.status(200).send({
-                    message: "ok",
-                    cars: list
-                });
+    User.findById(id).populate({path: 'cars'}).exec((err, user)=>{
+        if(err){
+            res.status(500).send({message: 'Problemas de base de datos'});
+        }else{
+            if(!user){
+                res.status(404).send({message: 'No se encontro el usuario'});
+            }else{
+                res.status(200).send({message: 'ok', user})
             }
         }
-    });
+    })
 }
 
 module.exports = {
@@ -161,5 +167,5 @@ module.exports = {
     login,
     updateUser,
     deleteUser,
-    getCars
+    findUser
 };
