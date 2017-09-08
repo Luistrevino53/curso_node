@@ -3,6 +3,7 @@
 var bcrypt = require('bcrypt-nodejs');
 var User = require('../models/user');
 var jwt = require('../services/jwt');
+var mongoosePaginate = require('mongoose-pagination');
 
 function prueba(req, res){
     res.status(200).send({
@@ -40,14 +41,26 @@ function saveUser(req, res){
 }
 
 function getUsers(req, res){
-    User.find((err,users)=>{
+    if(req.params.page){
+        var page = req.params.page;
+    }else{
+        var page = 1;
+    }
+
+    var itemsPerPage = 5;
+
+    User.find().paginate(page, itemsPerPage, (err, users, total)=>{
         if(err){
-            res.status(500).send({message: 'Ocurrio un problema con la base de datos...'});
+            res.status(500).send({message: 'Error en la base de datos'});
         }else{
             if(!users){
-                res.status(404).send({message: 'No se pudo recuperar los usuarios...'});
+                res.status(404).send({message: 'No se encontraron usuarios'});
             }else{
-                res.status(200).send({message: 'ok', users});
+                res.status(200).send({
+                    message: 'ok',
+                    total: total,
+                    users
+                });
             }
         }
     });
